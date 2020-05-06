@@ -29,6 +29,8 @@ services:
 
     postgres:
         build: services/postgres
+        ports:
+            - 5432:5432
         environment:
             - POSTGRES_USER=app
             - POSTGRES_PASSWORD=app
