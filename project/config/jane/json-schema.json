@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "brewer": {
+      "type": "string"
+    },
+    "style": {
+      "type": "string"
+    },
+    "volume": {
+      "type": "integer"
+    },
+    "alcohol": {
+      "type": "integer"
+    },
+    "country": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string"
+    }
+  }
+}
