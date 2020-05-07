@@ -38,22 +38,20 @@ services:
             - postgres-data:/var/lib/postgresql/data
 
     elasticsearch:
-        build: services/elasticsearch
+        image: elasticsearch:7.3.2
         volumes:
             - elasticsearch-data:/usr/share/elasticsearch/data
+        environment:
+            - "ES_JAVA_OPTS=-Xms128m -Xmx128m"
+            - "discovery.type=single-node"
         labels:
             - "traefik.enable=false"
-        ports:
-            - 9200:9200
-        environment:
-            ES_JAVA_OPTS: "-Xms512m -Xmx512m"
 
     kibana:
-        image: docker.elastic.co/kibana/kibana:7.6.2
+        image: kibana:7.3.2
+        depends_on:
+            - elasticsearch
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.${PROJECT_NAME}-kibana.rule=Host(`kibana.${PROJECT_ROOT_DOMAIN}`)"
             - "traefik.http.routers.${PROJECT_NAME}-kibana.tls=true"
-            - "traefik.http.routers.${PROJECT_NAME}-kibana-unsecure.rule=Host(`kibana.${PROJECT_ROOT_DOMAIN}`)"
-            # Comment the next line to be able to access frontend via HTTP instead of HTTPS
-            - "traefik.http.routers.${PROJECT_NAME}-kibana-unsecure.middlewares=redirect-to-https@file"

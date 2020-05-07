@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  JoliCode\Elastically\Client:
+    arguments:
+      $config:
+        log: '%kernel.debug%'
+        host: '%env(ELASTICSEARCH_HOST)%'
+        elastically_mappings_directory: '%kernel.project_dir%/config/mappings'
+        elastically_index_class_mapping:
+          beers: Generated\Model\Beer
+        elastically_serializer: '@serializer'
+        elastically_bulk_size: 100

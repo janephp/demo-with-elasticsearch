@@ -1,0 +1,21 @@
+settings:
+  number_of_replicas: 1
+  number_of_shards: 1
+  refresh_interval: 60s
+mappings:
+  dynamic: false
+  properties:
+    name:
+      type: text
+    brewer:
+      type: keyword
+    style:
+      type: text
+    volume:
+      type: integer
+    alcohol:
+      type: integer
+    country:
+      type: keyword
+    color:
+      type: keyword
