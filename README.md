@@ -96,3 +96,12 @@ foreach ($results as $result) {
 
 return $this->json($output);
 ```
+
+## Used libraries
+
+In order to make this app, I used many libraries, here is a quick list of them:
+- [jane-php/json-schema](https://github.com/janephp/janephp): Indeed, we are using it to generate models & normalizers
+- [jane-php/automapper](https://github.com/janephp/janephp): Allows you to automap values from Class to Class (In our case from an entity to a DTO)
+- [jolicode/elastically](https://github.com/jolicode/elastically): Elastica wrapper to bootstrap Elasticsearch PHP integration
+- [jolicode/docker-starter](https://github.com/jolicode/docker-starter): Used to have a quick & efficient docker setup
+- [symfony/*](https://github.com/symfony/symfony): And indeed, the framework we are using Symfony
