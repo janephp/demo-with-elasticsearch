@@ -11,7 +11,7 @@ class BeerController extends AbstractController
     const BEERS_INDEX = 'beers';
 
     /**
-     * @Route("/beer", name="beer")
+     * @Route("/beers", name="beers")
      */
     public function index(Client $client)
     {

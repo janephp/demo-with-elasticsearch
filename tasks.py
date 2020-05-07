@@ -58,9 +58,8 @@ def install(c):
     """
     Install the application (composer, yarn, ...)
     """
-    # with Builder(c):
-    #     docker_compose_run(c, 'composer install -n --prefer-dist --optimize-autoloader', no_deps=True)
-    #     run_in_docker_or_locally_for_dinghy(c, 'yarn', no_deps=True)
+    with Builder(c):
+        docker_compose_run(c, 'composer install -n --prefer-dist --optimize-autoloader', no_deps=True)
 
 
 @task
@@ -68,8 +67,8 @@ def cache_clear(c):
     """
     Clear the application cache
     """
-    # with Builder(c):
-    #     docker_compose_run(c, 'rm -rf var/cache/ && php bin/console cache:warmup', no_deps=True)
+    with Builder(c):
+        docker_compose_run(c, 'rm -rf var/cache/ && php bin/console cache:warmup', no_deps=True)
 
 
 @task
@@ -77,9 +76,27 @@ def migrate(c):
     """
     Migrate database schema
     """
-    # with Builder(c):
-    #     docker_compose_run(c, 'php bin/console doctrine:database:create --if-not-exists')
-    #     docker_compose_run(c, 'php bin/console doctrine:migration:migrate -n')
+    with Builder(c):
+        docker_compose_run(c, 'php bin/console doctrine:database:create --if-not-exists')
+        docker_compose_run(c, 'php bin/console doctrine:migration:migrate -n')
+
+
+@task
+def fixtures(c):
+    """
+    Migrate database schema
+    """
+    with Builder(c):
+        docker_compose_run(c, 'php bin/console doctrine:fixtures:load -n')
+
+
+@task
+def index(c):
+    """
+    Index data in Elasticsearch
+    """
+    with Builder(c):
+        docker_compose_run(c, 'php bin/console app:index')
 
 
 @task
