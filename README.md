@@ -43,4 +43,27 @@ Now you can see all our data from Elasticsearch on https://elasticsearch-jane.te
 
 ## And how Jane and Elasticsearch works together ?
 
-@todo
+You can see in `project/src/Controller/BeerController.php` file some interaction to show Elasticsearch results.
+Here is the same code, decomposed to explain each steps:
+
+```php
+// Here, client is an instance of JoliCode\Elastically\Client, we use this 
+// library on top of Elastica to send requests and read results.
+// Then with the `getIndex` method, we get a reference of the index we want
+// (here I'm asking for 'beers' index)
+$index = $client->getIndex(self::BEERS_INDEX);
+// And we make a search query on the index (no arguments means we search for any result)
+$resultSet = $index->search();
+// We get the results for given $resultSet
+$results = $resultSet->getResults();
+
+$output = ['beers' => []];
+foreach ($results as $result) {
+    // Then we get the model for each result
+    // Here, thanks to Elastically and the Symfony serializer, the `getModel` 
+    // method will return a Generated\Model\Beer instance
+    $output['beers'][] = $result->getModel();
+}
+
+return $this->json($output);
+```

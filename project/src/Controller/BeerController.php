@@ -15,8 +15,7 @@ class BeerController extends AbstractController
      */
     public function index(Client $client)
     {
-        $resultSet = $client->getIndex(self::BEERS_INDEX)->search();
-        $results = $resultSet->getResults();
+        $results = $client->getIndex(self::BEERS_INDEX)->search()->getResults();
 
         $output = ['beers' => []];
         foreach ($results as $result) {
