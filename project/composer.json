@@ -5,6 +5,7 @@
         "php": "^7.2.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "jane-php/automapper": "^6.0",
         "jane-php/json-schema": "^6.0",
         "jolicode/elastically": "@dev",
         "symfony/console": "5.0.*",

@@ -99,6 +99,9 @@
     "guzzlehttp/streams": {
         "version": "3.0.0"
     },
+    "jane-php/automapper": {
+        "version": "v6.0.0"
+    },
     "jane-php/json-schema": {
         "version": "5.0",
         "recipe": {

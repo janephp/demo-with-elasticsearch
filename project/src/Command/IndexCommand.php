@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Repository\BeerRepository;
 use Elastica\Document;
 use Generated\Model\Beer;
+use Jane\AutoMapper\AutoMapperInterface;
 use JoliCode\Elastically\Client;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,12 +18,14 @@ class IndexCommand extends Command
 
     private $elasticallyClient;
     private $beerRepository;
+    private $autoMapper;
 
-    public function __construct(Client $elasticallyClient, BeerRepository $beerRepository)
+    public function __construct(Client $elasticallyClient, BeerRepository $beerRepository, AutoMapperInterface $autoMapper)
     {
         parent::__construct(null);
         $this->elasticallyClient = $elasticallyClient;
         $this->beerRepository = $beerRepository;
+        $this->autoMapper = $autoMapper;
     }
 
     protected function configure(): void
@@ -44,16 +47,8 @@ class IndexCommand extends Command
 
         $beers = $this->beerRepository->findAll();
         foreach ($beers as $beer) {
-            $model = new Beer();
-            $model->setName($beer->getName());
-            $model->setBrewer($beer->getBrewer());
-            $model->setAlcohol($beer->getAlcohol());
-            $model->setVolume($beer->getVolume());
-            $model->setStyle($beer->getStyle());
-            $model->setColor($beer->getColor());
-            $model->setCountry($beer->getCountry());
-
-            $indexer->scheduleIndex(self::BEERS_INDEX, new Document($beer->getId(), $model));
+            $document = new Document($beer->getId(), $this->autoMapper->map($beer, Beer::class));
+            $indexer->scheduleIndex(self::BEERS_INDEX, $document);
         }
         $indexer->flush();
         $indexer->refresh(self::BEERS_INDEX);
