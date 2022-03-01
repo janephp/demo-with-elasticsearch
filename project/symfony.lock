@@ -1,4 +1,7 @@
 {
+    "composer/package-versions-deprecated": {
+        "version": "1.11.99.5"
+    },
     "doctrine/annotations": {
         "version": "1.0",
         "recipe": {
@@ -25,6 +28,9 @@
     },
     "doctrine/dbal": {
         "version": "2.10.2"
+    },
+    "doctrine/deprecations": {
+        "version": "v0.5.3"
     },
     "doctrine/doctrine-bundle": {
         "version": "2.0",
@@ -90,14 +96,20 @@
     "doctrine/reflection": {
         "version": "1.2.1"
     },
+    "doctrine/sql-formatter": {
+        "version": "1.1.2"
+    },
     "elasticsearch/elasticsearch": {
         "version": "v6.7.2"
     },
-    "guzzlehttp/ringphp": {
-        "version": "1.1.1"
+    "ezimuel/guzzlestreams": {
+        "version": "3.0.1"
     },
-    "guzzlehttp/streams": {
-        "version": "3.0.0"
+    "ezimuel/ringphp": {
+        "version": "1.2.0"
+    },
+    "friendsofphp/proxy-manager-lts": {
+        "version": "v1.0.6"
     },
     "jane-php/automapper": {
         "version": "v6.0.0"
@@ -114,20 +126,11 @@
     "jane-php/json-schema-runtime": {
         "version": "v6.0.0"
     },
-    "jdorn/sql-formatter": {
-        "version": "v1.2.17"
-    },
     "jolicode/elastically": {
         "version": "dev-master"
     },
     "laminas/laminas-code": {
         "version": "3.4.1"
-    },
-    "laminas/laminas-eventmanager": {
-        "version": "3.2.1"
-    },
-    "laminas/laminas-zendframework-bridge": {
-        "version": "1.0.3"
     },
     "league/uri": {
         "version": "6.2.1"
@@ -138,17 +141,20 @@
     "nikic/php-parser": {
         "version": "v4.4.0"
     },
-    "ocramius/package-versions": {
-        "version": "1.5.1"
-    },
-    "ocramius/proxy-manager": {
-        "version": "2.2.3"
-    },
-    "php": {
-        "version": "7.4"
+    "nyholm/dsn": {
+        "version": "2.0.1"
     },
     "php-jsonpointer/php-jsonpointer": {
         "version": "v3.0.2"
+    },
+    "phpdocumentor/reflection-common": {
+        "version": "2.2.0"
+    },
+    "phpdocumentor/reflection-docblock": {
+        "version": "5.3.0"
+    },
+    "phpdocumentor/type-resolver": {
+        "version": "1.6.0"
     },
     "psr/cache": {
         "version": "1.0.1"
@@ -195,6 +201,9 @@
     },
     "symfony/dependency-injection": {
         "version": "v5.0.8"
+    },
+    "symfony/deprecation-contracts": {
+        "version": "v2.5.0"
     },
     "symfony/doctrine-bridge": {
         "version": "v5.0.8"
@@ -273,17 +282,20 @@
     "symfony/options-resolver": {
         "version": "v5.0.8"
     },
-    "symfony/orm-pack": {
-        "version": "v1.0.8"
-    },
     "symfony/polyfill-intl-idn": {
         "version": "v1.15.0"
+    },
+    "symfony/polyfill-intl-normalizer": {
+        "version": "v1.24.0"
     },
     "symfony/polyfill-mbstring": {
         "version": "v1.15.0"
     },
     "symfony/polyfill-php73": {
         "version": "v1.15.0"
+    },
+    "symfony/polyfill-php80": {
+        "version": "v1.24.0"
     },
     "symfony/property-access": {
         "version": "v5.0.8"
@@ -323,13 +335,7 @@
     "symfony/yaml": {
         "version": "v5.0.8"
     },
-    "webimpress/safe-writer": {
-        "version": "2.0.1"
-    },
-    "zendframework/zend-code": {
-        "version": "3.4.1"
-    },
-    "zendframework/zend-eventmanager": {
-        "version": "3.2.1"
+    "webmozart/assert": {
+        "version": "1.10.0"
     }
 }
