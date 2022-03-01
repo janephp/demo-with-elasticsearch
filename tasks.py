@@ -1,7 +1,12 @@
 from invoke import task
 from shlex import quote
 from colorama import Fore
+from distutils.spawn import find_executable
+import json
+import os
 import re
+import requests
+import subprocess
 
 
 @task
@@ -12,6 +17,7 @@ def build(c):
     command = 'build'
     command += ' --build-arg PROJECT_NAME=%s' % c.project_name
     command += ' --build-arg USER_ID=%s' % c.user_id
+    command += ' --build-arg PHP_VERSION=%s' % c.php_version
 
     with Builder(c):
         for service in c.services_to_build_first:
@@ -41,16 +47,14 @@ def start(c):
             c.run('dinghy up --no-proxy')
             c.run('docker-machine ssh dinghy "echo \'nameserver 8.8.8.8\' | sudo tee -a /etc/resolv.conf && sudo /etc/init.d/docker restart"')
 
-    stop_workers(c)
+    generate_certificates(c)
     up(c)
     cache_clear(c)
     install(c)
     migrate(c)
-    start_workers(c)
 
-    print(Fore.GREEN + 'You can now browse:')
-    for domain in [c.root_domain] + c.extra_domains:
-        print(Fore.YELLOW + "* https://" + domain)
+    print(Fore.GREEN + 'The stack is now up and running.')
+    help(c)
 
 
 @task
@@ -59,7 +63,12 @@ def install(c):
     Install the application (composer, yarn, ...)
     """
     with Builder(c):
-        docker_compose_run(c, 'composer install -n --prefer-dist --optimize-autoloader', no_deps=True)
+        if os.path.isfile(c.root_dir + '/' + c.project_directory + '/composer.json'):
+            docker_compose_run(c, 'composer install -n --prefer-dist --optimize-autoloader', no_deps=True)
+        if os.path.isfile(c.root_dir + '/' + c.project_directory + '/yarn.lock'):
+            run_in_docker_or_locally_for_dinghy(c, 'yarn', no_deps=True)
+        elif os.path.isfile(c.root_dir + '/' + c.project_directory + '/package.json'):
+            run_in_docker_or_locally_for_dinghy(c, 'npm install', no_deps=True)
 
 
 @task
@@ -105,7 +114,7 @@ def builder(c, user="app"):
     Open a shell (bash) into a builder container
     """
     with Builder(c):
-        docker_compose_run(c, 'bash', user=user)
+        docker_compose_run(c, 'bash', user=user, bare_run=True)
 
 
 @task
@@ -133,36 +142,6 @@ def stop(c):
 
 
 @task
-def start_workers(c):
-    """
-    Start the workers
-    """
-    workers = get_workers(c)
-
-    if (len(workers) == 0):
-        return
-
-    c.start_workers = True
-    c.run('docker update --restart=unless-stopped %s' % (' '.join(workers)), hide='both')
-    docker_compose(c, 'up --remove-orphans --detach')
-
-
-@task
-def stop_workers(c):
-    """
-    Stop the workers
-    """
-    workers = get_workers(c)
-
-    if (len(workers) == 0):
-        return
-
-    c.start_workers = False
-    c.run('docker update --restart=no %s' % (' '.join(workers)), hide='both')
-    c.run('docker stop %s' % (' '.join(workers)), hide='both')
-
-
-@task
 def destroy(c, force=False):
     """
     Clean the infrastructure (remove container, volume, networks)
@@ -175,6 +154,80 @@ def destroy(c, force=False):
 
     with Builder(c):
         docker_compose(c, 'down --remove-orphans --volumes --rmi=local')
+        c.run('rm -f infrastructure/docker/services/router/etc/ssl/certs/*.pem')
+
+
+@task(default=True)
+def help(c):
+    """
+    Display some help and available urls for the current project
+    """
+
+    print('Run ' + Fore.GREEN + 'inv help' + Fore.RESET + ' to display this help.')
+    print('')
+
+    print('Run ' + Fore.GREEN + 'inv --help' + Fore.RESET + ' to display invoke help.')
+    print('')
+
+    print('Run ' + Fore.GREEN + 'inv -l' + Fore.RESET + ' to list all the available tasks.')
+    c.run('inv --list')
+
+    print(Fore.GREEN + 'Available URLs for this project:' + Fore.RESET)
+    for domain in [c.root_domain] + c.extra_domains:
+        print("* " + Fore.YELLOW + "https://" + domain + Fore.RESET)
+
+    try:
+        response = json.loads(requests.get('http://%s:8080/api/http/routers' % (c.root_domain)).text)
+        gen = (router for router in response if re.match("^%s-(.*)@docker$" % (c.project_name), router['name']))
+        for router in gen:
+            if router['service'] != 'frontend-%s' % (c.project_name):
+                host = re.search('Host\(\`(?P<host>.*)\`\)', router['rule']).group('host')
+                if host:
+                    scheme = 'https' if 'https' in router['using'] else router['using'][0]
+                    print("* " + Fore.YELLOW + scheme + "://" + host + Fore.RESET)
+        print('')
+    except:
+        pass
+
+
+@task
+def generate_certificates(c, force=False):
+    """
+    Generate SSL certificates (with mkcert if available or self-signed if not)
+    """
+    with Builder(c):
+        if (os.path.isfile(c.root_dir + '/infrastructure/docker/services/router/etc/ssl/certs/cert.pem') and not force):
+            print(Fore.GREEN + 'SSL certificates found in infrastructure/docker/services/router/etc/ssl/certs/*.pem.')
+            print('Run "inv generate-certificates --force" to generate new certificates.')
+            return
+
+        if force:
+            if os.path.isfile(c.root_dir + '/infrastructure/docker/services/router/etc/ssl/certs/cert.pem'):
+                print('Removing existing certificates in infrastructure/docker/services/router/etc/ssl/certs/*.pem.')
+                os.remove('infrastructure/docker/services/router/etc/ssl/certs/cert.pem')
+
+            if os.path.isfile(c.root_dir + '/infrastructure/docker/services/router/etc/ssl/certs/key.pem'):
+                os.remove('infrastructure/docker/services/router/etc/ssl/certs/key.pem')
+
+        if find_executable('mkcert') is not None:
+            path_caroot = c.run('mkcert -CAROOT', hide=True).stdout.strip()
+
+            if not os.path.isdir(path_caroot):
+                print(Fore.RED + 'You must have mkcert CA Root installed on your host with `mkcert -install` command')
+                return
+
+            c.run('mkcert -cert-file infrastructure/docker/services/router/etc/ssl/certs/cert.pem -key-file infrastructure/docker/services/router/etc/ssl/certs/key.pem %s "*.%s" %s' % (c.root_domain, c.root_domain, ' '.join(c.extra_domains)))
+            print(Fore.GREEN + 'Successfully generated SSL certificates with mkcert.')
+            if force:
+                print('Please restart the infrastructure to use the new certificates with "inv up" or "inv start".')
+            return
+
+        c.run('infrastructure/docker/services/router/generate-ssl.sh')
+
+        print(Fore.GREEN + 'Successfully generated self-signed SSL certificates in infrastructure/docker/services/router/etc/ssl/certs/*.pem.')
+        print(Fore.YELLOW + 'Consider installing mkcert to generate locally trusted SSL certificates and run "inv generate-certificates --force".')
+        if force:
+            print('Please restart the infrastructure to use the new certificates with "inv up" or "inv start".')
 
 
 def run_in_docker_or_locally_for_dinghy(c, command, no_deps=False):
@@ -188,7 +241,7 @@ def run_in_docker_or_locally_for_dinghy(c, command, no_deps=False):
         docker_compose_run(c, command, no_deps=no_deps)
 
 
-def docker_compose_run(c, command_name, service="builder", user="app", no_deps=False, workdir=None, port_mapping=False):
+def docker_compose_run(c, command_name, service="builder", user="app", no_deps=False, workdir=None, port_mapping=False, bare_run=False):
     args = [
         'run',
         '--rm',
@@ -208,18 +261,20 @@ def docker_compose_run(c, command_name, service="builder", user="app", no_deps=F
         ' '.join(args),
         quote(service),
         command_name
-    ))
+    ), bare_run=bare_run)
 
 
-def docker_compose(c, command_name):
+def docker_compose(c, command_name, bare_run=False):
     domains = '`' + '`, `'.join([c.root_domain] + c.extra_domains) + '`'
 
+    # This list should be in sync with the one in invoke.py
     env = {
         'PROJECT_NAME': c.project_name,
         'PROJECT_DIRECTORY': c.project_directory,
         'PROJECT_ROOT_DOMAIN': c.root_domain,
         'PROJECT_DOMAINS': domains,
-        'PROJECT_START_WORKERS': str(c.start_workers),
+        'COMPOSER_CACHE_DIR': c.composer_cache_dir,
+        'PHP_VERSION': c.php_version,
     }
 
     cmd = 'docker-compose -p %s %s %s' % (
@@ -228,15 +283,14 @@ def docker_compose(c, command_name):
         command_name
     )
 
-    c.run(cmd, pty=not c.power_shell, env=env)
-
-
-def get_workers(c):
-    """
-    Find worker containers for the current project
-    """
-    cmd = c.run('docker ps -a --filter "label=docker-starter.worker.%s" --quiet' % c.project_name, hide='both')
-    return list(filter(None, cmd.stdout.rsplit("\n")))
+    # bare_run bypass invoke run() function
+    # see https://github.com/pyinvoke/invoke/issues/744
+    # Use it ONLY for task where you need to interact with the container like builder
+    if (bare_run):
+        env.update(os.environ)
+        subprocess.run(cmd, shell=True, env=env)
+    else:
+        c.run(cmd, pty=not c.power_shell, env=env)
 
 
 def confirm_choice(message):

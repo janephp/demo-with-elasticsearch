@@ -7,8 +7,6 @@ volumes:
 services:
     router:
         build: services/router
-        ports:
-            - 8080:8080
         volumes:
             - "/var/run/docker.sock:/var/run/docker.sock"
         network_mode: "host"
@@ -17,6 +15,8 @@ services:
         build: services/frontend
         depends_on:
             - postgres
+        environment:
+            - "PHP_VERSION=${PHP_VERSION}"
         volumes:
             - "../../${PROJECT_DIRECTORY}:/home/app/application:cached"
         labels:

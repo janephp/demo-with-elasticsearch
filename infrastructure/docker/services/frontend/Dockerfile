@@ -2,6 +2,8 @@ ARG PROJECT_NAME
 
 FROM ${PROJECT_NAME}_php-base
 
+ARG PHP_VERSION
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         nginx \
@@ -12,7 +14,9 @@ RUN apt-get update \
 
 RUN useradd -s /bin/false nginx
 
-COPY etc/. /etc/
+COPY etc/nginx/. /etc/nginx/
+COPY etc/service/. /etc/service/
+COPY php-configuration /etc/php/${PHP_VERSION}
 
 RUN phpenmod app-default \
     && phpenmod app-fpm
